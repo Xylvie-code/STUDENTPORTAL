@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Portal</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#1d2433;--mute:#667085;--line:#e3e7ee;--brand:#1f4e8c;--brand2:#e8f0fb;--ok:#1b7f4b;--warn:#b7791f;--bad:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+.hidden{display:none!important}
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:32px;width:100%;max-width:380px}
+.box h1{margin:0 0 4px;font-size:1.5rem;color:var(--brand)}
+.box p{margin:0 0 20px;color:var(--mute)}
+label{display:block;font-size:.9rem;font-weight:600;margin:12px 0 4px}
+input{width:100%;padding:10px 12px;border:1px solid #c9d0dc;border-radius:6px;font:inherit}
+input:focus,button:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:6px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;width:100%;margin-top:18px}
+.btn:hover{background:#173e72}
+.err{color:var(--bad);font-size:.9rem;margin-top:10px;min-height:1.2em}
+.hint{margin-top:16px;font-size:.82rem;color:var(--mute);background:var(--bg);padding:10px;border-radius:6px}
+/* app */
+header{background:var(--brand);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;gap:12px;flex-wrap:wrap}
+header b{font-size:1.1rem}
+header button{background:transparent;color:#fff;border:1px solid #ffffff88;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
+nav{background:var(--card);border-bottom:1px solid var(--line);display:flex;overflow-x:auto}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:14px 18px;font:inherit;color:var(--mute);cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--brand);border-color:var(--brand);font-weight:600}
+main{max-width:900px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
+h2{margin:0 0 14px;font-size:1.2rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--brand2);border-radius:8px;padding:14px}
+.stat small{color:var(--mute);display:block}
+.stat strong{font-size:1.5rem}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+.bar{background:var(--line);border-radius:99px;height:8px;min-width:90px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:600}
+.paid{background:#e3f5ea;color:var(--ok)}.pending{background:#fdf1db;color:var(--warn)}.due{background:#fbe5e2;color:var(--bad)}
+.notice{border-left:4px solid var(--brand);padding:4px 0 4px 14px;margin-bottom:16px}
+.notice h3{margin:0;font-size:1rem}
+.notice small{color:var(--mute)}
+.notice p{margin:4px 0 0}
+.low{color:var(--bad);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <div class="box">
+    <h1>Student Portal</h1>
+    <p>Sign in to see your attendance, results, fees and notices.</p>
+    <form id="lf">
+      <label for="id">Student ID</label>
+      <input id="id" autocomplete="username" required>
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <div class="err" id="err" role="alert"></div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+    <div class="hint">Demo logins: <b>S1001</b> / <b>pass123</b> or <b>S1002</b> / <b>pass123</b></div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app" class="hidden">
+  <header>
+    <div><b>Student Portal</b> &nbsp; <span id="who"></span></div>
+    <button id="out">Sign out</button>
+  </header>
+  <nav id="tabs">
+    <button data-t="home" class="on">Dashboard</button>
+    <button data-t="att">Attendance</button>
+    <button data-t="res">Results</button>
+    <button data-t="fee">Fees</button>
+    <button data-t="not">Notices</button>
+  </nav>
+  <main id="view"></main>
+</section>
+
+<script>
+/* ---------- DEMO DATA (replace with your own / a server) ---------- */
+const STUDENTS = {
+  S1001:{password:"pass123",name:"Aarav Patil",course:"B.Sc. Computer Science",year:"Second Year",
+    attendance:[["Data Structures",42,36],["Database Systems",38,33],["Mathematics",40,28],["Operating Systems",36,34],["English",30,27]],
+    results:{"Semester 3 (Mid-term)":[["Data Structures",50,41],["Database Systems",50,44],["Mathematics",50,29],["Operating Systems",50,38],["English",50,40]],
+             "Semester 2 (Final)":[["Programming in C",100,78],["Digital Electronics",100,66],["Statistics",100,71],["Communication Skills",100,82]]},
+    fees:[["Tuition Fee – Term 1",25000,25000,"2026-06-30"],["Library & Lab Fee",3000,3000,"2026-06-30"],["Tuition Fee – Term 2",25000,10000,"2026-11-15"],["Exam Fee",2000,0,"2026-11-30"]]},
+  S1002:{password:"pass123",name:"Diya Kulkarni",course:"B.Com.",year:"First Year",
+    attendance:[["Accountancy",40,38],["Business Law",35,30],["Economics",38,35],["English",30,29]],
+    results:{"Semester 1 (Final)":[["Accountancy",100,84],["Business Law",100,72],["Economics",100,77],["English",100,88]]},
+    fees:[["Tuition Fee – Term 1",18000,18000,"2026-06-30"],["Tuition Fee – Term 2",18000,0,"2026-10-05"],["Exam Fee",2000,0,"2026-11-30"]]}
+};
+const NOTICES = [
+  ["2026-10-09","Mid-term timetable released","Mid-term examinations begin on 20 October. Check the department board for subject-wise dates."],
+  ["2026-10-06","Diwali holidays","The college will remain closed from 19 to 24 October. Classes resume on 26 October."],
+  ["2026-10-01","Fee payment reminder","Term 2 fees must be paid before the due date shown in the Fees tab to avoid a late charge."],
+  ["2026-09-25","Annual sports meet","Register with your class representative by 30 September to take part."]
+];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const inr = n => "₹" + n.toLocaleString("en-IN");
+const pct = (a,b) => Math.round(a/b*100);
+const col = p => p>=75 ? "var(--ok)" : p>=60 ? "var(--warn)" : "var(--bad)";
+const dt = s => new Date(s).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+function grade(p){return p>=85?"A+":p>=75?"A":p>=65?"B":p>=50?"C":p>=40?"D":"F"}
+let me = null;
+
+/* ---------- login ---------- */
+$("#lf").addEventListener("submit", e => {
+  e.preventDefault();
+  const id = $("#id").value.trim().toUpperCase(), u = STUDENTS[id];
+  if (!u || u.password !== $("#pw").value) { $("#err").textContent = "Wrong Student ID or password. Check both and try again."; return; }
+  me = {id, ...u};
+  try { sessionStorage.setItem("sp_user", id); } catch(_){}
+  start();
+});
+$("#out").onclick = () => { me = null; try { sessionStorage.removeItem("sp_user"); } catch(_){}
+  $("#app").classList.add("hidden"); $("#login").classList.remove("hidden"); $("#lf").reset(); $("#err").textContent=""; };
+
+function start(){
+  $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
+  $("#who").textContent = me.name + " (" + me.id + ")";
+  show("home");
+}
+try { const s = sessionStorage.getItem("sp_user"); if (s && STUDENTS[s]) { me = {id:s, ...STUDENTS[s]}; start(); } } catch(_){}
+
+/* ---------- tabs ---------- */
+$("#tabs").addEventListener("click", e => { const t = e.target.dataset.t; if (t) show(t); });
+function show(t){
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  $("#view").innerHTML = ({home,att,res,fee,not})[t]();
+  if (t === "res") $("#sem").onchange = e => { $("#rtable").innerHTML = resRows(e.target.value); };
+}
+
+/* ---------- pages ---------- */
+function totals(){
+  const tot = me.attendance.reduce((a,r)=>a+r[1],0), att = me.attendance.reduce((a,r)=>a+r[2],0);
+  const total = me.fees.reduce((a,r)=>a+r[1],0), paid = me.fees.reduce((a,r)=>a+r[2],0);
+  return {ap:pct(att,tot), total, paid, bal:total-paid};
+}
+function home(){
+  const t = totals();
+  return `<div class="card"><h2>Welcome, ${me.name}</h2>
+    <p style="margin:0 0 14px;color:var(--mute)">${me.course} · ${me.year}</p>
+    <div class="grid">
+      <div class="stat"><small>Overall attendance</small><strong style="color:${col(t.ap)}">${t.ap}%</strong></div>
+      <div class="stat"><small>Fees paid</small><strong>${inr(t.paid)}</strong></div>
+      <div class="stat"><small>Fee balance</small><strong>${inr(t.bal)}</strong></div>
+      <div class="stat"><small>New notices</small><strong>${NOTICES.length}</strong></div>
+    </div></div>
+    <div class="card"><h2>Latest notice</h2>${noticeHtml(NOTICES[0])}</div>`;
+}
+function att(){
+  const rows = me.attendance.map(([s,t,a]) => { const p = pct(a,t);
+    return `<tr><td>${s}</td><td>${a} / ${t}</td><td><div class="bar"><i style="width:${p}%;background:${col(p)}"></i></div></td>
+    <td class="${p<75?'low':''}">${p}%</td></tr>`; }).join("");
+  return `<div class="card"><h2>Attendance</h2><div class="tw"><table>
+    <tr><th>Subject</th><th>Attended</th><th></th><th>Percent</th></tr>${rows}</table></div>
+    <p style="color:var(--mute);font-size:.9rem;margin-bottom:0">A minimum of 75% attendance is required to sit for exams. Subjects below 75% are shown in red.</p></div>`;
+}
+function resRows(sem){
+  const list = me.results[sem];
+  let tm=0, to=0;
+  const r = list.map(([s,m,o]) => { tm+=m; to+=o; const p=pct(o,m);
+    return `<tr><td>${s}</td><td>${o} / ${m}</td><td>${p}%</td><td>${grade(p)}</td><td><span class="tag ${p>=40?'paid':'due'}">${p>=40?'Pass':'Fail'}</span></td></tr>`; }).join("");
+  const p = pct(to,tm);
+  return `<tr><th>Subject</th><th>Marks</th><th>Percent</th><th>Grade</th><th>Result</th></tr>${r}
+    <tr><td><b>Total</b></td><td><b>${to} / ${tm}</b></td><td><b>${p}%</b></td><td><b>${grade(p)}</b></td><td></td></tr>`;
+}
+function res(){
+  const sems = Object.keys(me.results);
+  return `<div class="card"><h2>Examination results</h2>
+    <label for="sem" style="margin-top:0">Exam</label>
+    <select id="sem" style="padding:9px;border:1px solid #c9d0dc;border-radius:6px;font:inherit;margin-bottom:14px">${sems.map(s=>`<option>${s}</option>`).join("")}</select>
+    <div class="tw"><table id="rtable">${resRows(sems[0])}</table></div></div>`;
+}
+function fee(){
+  const t = totals(), today = new Date().toISOString().slice(0,10);
+  const rows = me.fees.map(([n,a,p,d]) => { const b=a-p;
+    const st = b===0 ? ["paid","Paid"] : d<today ? ["due","Overdue"] : ["pending","Pending"];
+    return `<tr><td>${n}</td><td>${inr(a)}</td><td>${inr(p)}</td><td>${inr(b)}</td><td>${dt(d)}</td><td><span class="tag ${st[0]}">${st[1]}</span></td></tr>`; }).join("");
+  return `<div class="card"><h2>Fee details</h2>
+    <div class="grid" style="margin-bottom:16px">
+      <div class="stat"><small>Total fees</small><strong>${inr(t.total)}</strong></div>
+      <div class="stat"><small>Paid</small><strong>${inr(t.paid)}</strong></div>
+      <div class="stat"><small>Balance</small><strong style="color:${t.bal?'var(--bad)':'var(--ok)'}">${inr(t.bal)}</strong></div></div>
+    <div class="tw"><table><tr><th>Item</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Due date</th><th>Status</th></tr>${rows}</table></div>
+    <p style="color:var(--mute);font-size:.9rem;margin-bottom:0">To pay, visit the accounts office or contact the college.</p></div>`;
+}
+function noticeHtml([d,t,b]){return `<div class="notice"><h3>${t}</h3><small>${dt(d)}</small><p>${b}</p></div>`}
+function not(){ return `<div class="card"><h2>Notices</h2>${NOTICES.map(noticeHtml).join("")}</div>`; }
+</script>
+</body>
+</html>
